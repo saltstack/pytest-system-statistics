@@ -34,9 +34,9 @@ class StatsProcesses:
     Class which holds the processes being tracked.
     """
 
-    processes: Dict[str, psutil.Process] = attr.ib(
+    processes = attr.ib(
         init=False, default=attr.Factory(OrderedDict), hash=False
-    )
+    )  # type: Dict[str, psutil.Process]
 
     def add(self, display_name: str, process: Union[int, psutil.Process]) -> None:
         """
@@ -72,12 +72,12 @@ class SystemStatsReporter:
     Tracked processes pytest reporter.
     """
 
-    config: "Config" = attr.ib(repr=False, hash=False)
-    stats_processes: Optional[StatsProcesses] = attr.ib(repr=False, hash=False)
-    terminalreporter: "TerminalReporter" = attr.ib(repr=False, hash=False)
-    show_sys_stats: bool = attr.ib(init=False)
-    sys_stats_no_children: bool = attr.ib(init=False)
-    sys_stats_mem_type: str = attr.ib(init=False)
+    config = attr.ib(repr=False, hash=False)  # type: "Config"
+    stats_processes = attr.ib(repr=False, hash=False)  # type: Optional[StatsProcesses]
+    terminalreporter = attr.ib(repr=False, hash=False)  # type: "TerminalReporter"
+    show_sys_stats = attr.ib(init=False)  # type: bool
+    sys_stats_no_children = attr.ib(init=False)  # type: bool
+    sys_stats_mem_type = attr.ib(init=False)  # type: str
 
     def __attrs_post_init__(self) -> None:
         """
@@ -236,9 +236,9 @@ def pytest_sessionstart(session: "Session") -> None:
 
     session.config.pluginmanager.register(stats_processes_instance, "sysstats-processes")
 
-    terminalreporter: "TerminalReporter" = session.config.pluginmanager.getplugin(
+    terminalreporter = session.config.pluginmanager.getplugin(
         "terminalreporter"
-    )
+    )  # type: "TerminalReporter"
     sys_stats_reporter = SystemStatsReporter(
         config=session.config,
         stats_processes=stats_processes_instance,
@@ -252,5 +252,5 @@ def stats_processes(request: "SubRequest") -> StatsProcesses:
     """
     Session scoped process statistics tracker.
     """
-    plugin: StatsProcesses = request.config.pluginmanager.get_plugin("sysstats-processes")
+    plugin = request.config.pluginmanager.get_plugin("sysstats-processes")  # type: StatsProcesses
     return plugin
