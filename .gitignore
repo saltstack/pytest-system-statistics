@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Ignore CI artifacts
+artifacts/
+
+# Ignore the setuptools_scm generated version file
+src/pytestsysstats/version.py

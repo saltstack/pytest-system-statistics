@@ -1,0 +1,9 @@
+-r base.txt
+-r tests.txt
+furo
+sphinx
+sphinx-copybutton
+sphinx-prompt
+sphinxcontrib-spelling
+sphinxcontrib-towncrier
+towncrier >= 0.2.0a0
