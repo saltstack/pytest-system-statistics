@@ -15,6 +15,7 @@ from nox.command import CommandFailed
 
 
 COVERAGE_VERSION_REQUIREMENT = "coverage==5.5"
+PYTEST_VERSION_REQUIREMENT = os.environ.get("PYTEST_VERSION_REQUIREMENT") or None
 IS_WINDOWS = sys.platform.lower().startswith("win")
 IS_DARWIN = sys.platform.lower().startswith("darwin")
 
@@ -89,7 +90,7 @@ def session_run_always(session, *command, **kwargs):
             session._runner.global_config.install_only = old_install_only_value
 
 
-@nox.session(python=("3", "3.5", "3.6", "3.7", "3.8", "3.9"))
+@nox.session(python=("3", "3.5", "3.6", "3.7", "3.8", "3.9", "3.10"))
 def tests(session):
     """
     Run tests.
@@ -99,7 +100,7 @@ def tests(session):
         # Always have the wheel package installed
         session.install("wheel", silent=PIP_INSTALL_SILENT)
         session.install(COVERAGE_VERSION_REQUIREMENT, silent=PIP_INSTALL_SILENT)
-        pytest_version_requirement = os.environ.get("PYTEST_VERSION_REQUIREMENT") or None
+        pytest_version_requirement = PYTEST_VERSION_REQUIREMENT
         if pytest_version_requirement:
             if not pytest_version_requirement.startswith("pytest"):
                 pytest_version_requirement = "pytest{}".format(pytest_version_requirement)
