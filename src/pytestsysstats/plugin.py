@@ -177,7 +177,7 @@ class SystemStatsReporter:
                                         continue
                                 if stats["c_count"]:
                                     stats["c_mem"] = "{:6.2f}".format(c_mem)
-                                else:
+                                else:  # pragma: no cover
                                     template = no_children_template
                         self.terminalreporter.write(template.format(**stats))
                 except psutil.NoSuchProcess:  # pragma: no cover

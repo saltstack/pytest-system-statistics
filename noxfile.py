@@ -20,11 +20,11 @@ IS_WINDOWS = sys.platform.lower().startswith("win")
 IS_DARWIN = sys.platform.lower().startswith("darwin")
 
 if IS_WINDOWS:
-    COVERAGE_FAIL_UNDER_PERCENT = 98
+    COVERAGE_FAIL_UNDER_PERCENT = 96
 elif IS_DARWIN:
-    COVERAGE_FAIL_UNDER_PERCENT = 98
+    COVERAGE_FAIL_UNDER_PERCENT = 96
 else:
-    COVERAGE_FAIL_UNDER_PERCENT = 98
+    COVERAGE_FAIL_UNDER_PERCENT = 96
 
 # Be verbose when running under a CI context
 PIP_INSTALL_SILENT = (os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS")) is None
@@ -98,15 +98,18 @@ def tests(session):
     env = {}
     if SKIP_REQUIREMENTS_INSTALL is False:
         # Always have the wheel package installed
-        session.install("wheel", silent=PIP_INSTALL_SILENT)
-        session.install(COVERAGE_VERSION_REQUIREMENT, silent=PIP_INSTALL_SILENT)
+        session.install("--progress-bar=off", "wheel", silent=PIP_INSTALL_SILENT)
+        session.install(
+            "--progress-bar=off", COVERAGE_VERSION_REQUIREMENT, silent=PIP_INSTALL_SILENT
+        )
         pytest_version_requirement = PYTEST_VERSION_REQUIREMENT
         if pytest_version_requirement:
             if not pytest_version_requirement.startswith("pytest"):
                 pytest_version_requirement = "pytest{}".format(pytest_version_requirement)
-            session.install(pytest_version_requirement, silent=PIP_INSTALL_SILENT)
-        session.install("-e", ".", silent=PIP_INSTALL_SILENT)
-        session.install("-r", os.path.join("requirements", "tests.txt"), silent=PIP_INSTALL_SILENT)
+            session.install(
+                "--progress-bar=off", pytest_version_requirement, silent=PIP_INSTALL_SILENT
+            )
+        session.install("--progress-bar=off", "-e", ".[tests]", silent=PIP_INSTALL_SILENT)
 
         if EXTRA_REQUIREMENTS_INSTALL:
             session.log(
@@ -124,6 +127,8 @@ def tests(session):
             # The full path to the .coverage data file. Makes sure we always write
             # them to the same directory
             "COVERAGE_FILE": str(COVERAGE_REPORT_DB),
+            # Instruct sub processes to also run under coverage
+            "COVERAGE_PROCESS_START": str(REPO_ROOT / ".coveragerc"),
         }
     )
 
@@ -154,6 +159,13 @@ def tests(session):
     try:
         session.run("coverage", "run", "-m", "pytest", *args, env=env)
     finally:
+        # Always combine and generate the XML coverage report
+        try:
+            session.run("coverage", "combine")
+        except CommandFailed:
+            # Sometimes some of the coverage files are corrupt which would
+            # trigger a CommandFailed exception
+            pass
         # Generate report for project code coverage
         session.run(
             "coverage",
@@ -188,12 +200,7 @@ def tests(session):
 
 
 def _lint(session, rcfile, flags, paths):
-    session.install(
-        "--progress-bar=off",
-        "-r",
-        os.path.join("requirements", "lint.txt"),
-        silent=PIP_INSTALL_SILENT,
-    )
+    session.install("--progress-bar=off", "-e", ".[lint]", silent=PIP_INSTALL_SILENT)
     session.run("pylint", "--version")
     pylint_report_path = os.environ.get("PYLINT_REPORT")
 
@@ -257,13 +264,7 @@ def docs(session):
     """
     Build Docs.
     """
-    session.install(
-        "--progress-bar=off",
-        "-r",
-        os.path.join("requirements", "docs.txt"),
-        silent=PIP_INSTALL_SILENT,
-    )
-    session.install("-e", ".", silent=PIP_INSTALL_SILENT)
+    session.install("--progress-bar=off", "-e", ".[docs]", silent=PIP_INSTALL_SILENT)
     os.chdir("docs/")
     session.run("make", "clean", external=True)
     # session.run("make", "linkcheck", "SPHINXOPTS=-W", external=True)
@@ -300,13 +301,7 @@ def docs_crosslink_info(session):
     """
     Report intersphinx cross links information.
     """
-    session.install(
-        "--progress-bar=off",
-        "-r",
-        os.path.join("requirements", "docs.txt"),
-        silent=PIP_INSTALL_SILENT,
-    )
-    session.install("-e", ".", silent=PIP_INSTALL_SILENT)
+    session.install("--progress-bar=off", "-e", ".[docs]", silent=PIP_INSTALL_SILENT)
     os.chdir("docs/")
     intersphinx_mapping = json.loads(
         session.run(
@@ -342,13 +337,7 @@ def gen_api_docs(session):
     """
     Generate API Docs.
     """
-    session.install(
-        "--progress-bar=off",
-        "-r",
-        os.path.join("requirements", "docs.txt"),
-        silent=PIP_INSTALL_SILENT,
-    )
-    session.install("-e", ".", silent=PIP_INSTALL_SILENT)
+    session.install("--progress-bar=off", "-e", ".[docs]", silent=PIP_INSTALL_SILENT)
     shutil.rmtree("docs/ref", ignore_errors=True)
     session.run("sphinx-apidoc", "--module-first", "-o", "docs/ref/", "src/pytestsysstats/")
 
@@ -359,11 +348,7 @@ def changelog(session, draft):
     """
     Generate changelog.
     """
-    requirements_file = os.path.join("requirements", "changelog.txt")
-    install_command = ["--progress-bar=off", "-r", requirements_file]
-    session.install(*install_command, silent=PIP_INSTALL_SILENT)
-    session.install("-e", ".", silent=PIP_INSTALL_SILENT)
-
+    session.install("--progress-bar=off", "-e", ".[changelog]", silent=PIP_INSTALL_SILENT)
     version = session.run(
         "python",
         "setup.py",
