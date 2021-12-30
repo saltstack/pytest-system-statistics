@@ -7,7 +7,7 @@ write_to = "src/pytestsysstats/version.py"
 write_to_template = "# pylint: skip-file\n\n__version__ = \"{version}\"\n"
 
 [tool.towncrier]
-package = "pytest-system-statistics"
+package = "pytestsysstats"
 filename = "CHANGELOG.rst"
 directory = "changelog/"
 title_format = "system-statistics {version} ({project_date})"

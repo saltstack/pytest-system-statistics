@@ -284,13 +284,7 @@ def docs_dev(session):
     """
     Build Docs.
     """
-    session.install(
-        "--progress-bar=off",
-        "-r",
-        os.path.join("requirements", "docs.txt"),
-        silent=PIP_INSTALL_SILENT,
-    )
-    session.install("-e", ".", silent=PIP_INSTALL_SILENT)
+    session.install("--progress-bar=off", "-e", ".[docs]", silent=PIP_INSTALL_SILENT)
     os.chdir("docs/")
     session.run("make", "html", "SPHINXOPTS=-W", external=True, env={"LOCAL_DEV_BUILD": "1"})
     os.chdir("..")
@@ -355,9 +349,10 @@ def changelog(session, draft):
         "--version",
         silent=True,
         log=False,
+        stderr=None,
     )
 
-    town_cmd = ["towncrier", "--version={}".format(version)]
+    town_cmd = ["towncrier", "build", "--version={}".format(version)]
     if draft:
         town_cmd.append("--draft")
     session.run(*town_cmd)
