@@ -12,3 +12,9 @@ Backward incompatible (breaking) changes will only be introduced in major versio
 .. towncrier-draft-entries::
 
 .. towncrier release notes start
+
+
+system-statistics 1.0.0 (2022-01-05)
+====================================
+
+First Release.
