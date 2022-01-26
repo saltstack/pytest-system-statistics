@@ -13,6 +13,15 @@ Backward incompatible (breaking) changes will only be introduced in major versio
 
 .. towncrier release notes start
 
+1.0.1 (2022-01-26)
+==================
+
+Trivial/Internal Changes
+------------------------
+
+- Reproducible builds
+-  ``towncrier`` now uses ``issue_format``
+
 
 system-statistics 1.0.0 (2022-01-05)
 ====================================

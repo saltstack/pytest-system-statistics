@@ -1,3 +1,0 @@
-Reproducible builds
-
-* ``towncrier`` now uses ``issue_format`
