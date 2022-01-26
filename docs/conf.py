@@ -16,11 +16,12 @@ import os
 import pathlib
 import sys
 
-try:
-    from importlib_metadata import distribution
-except ImportError:
-    from importlib.metadata import distribution
+from sphinx.directives.code import LiteralInclude
 
+try:
+    from importlib.metadata import version as pkg_version
+except ImportError:
+    from importlib_metadata import version as pkg_version
 
 try:
     DOCS_BASEPATH = pathlib.Path(__file__).resolve().parent
@@ -32,15 +33,12 @@ except NameError:
 REPO_ROOT = DOCS_BASEPATH.parent
 
 addtl_paths = (
-    os.path.join(os.pardir, "src"),  # pytest-system-statistics itself (for autodoc)
-    "_ext",  # custom Sphinx extensions
+    DOCS_BASEPATH / "_ext",  # custom Sphinx extensions
+    REPO_ROOT / "src",  # pytestskipmarkers itself (for autodoc)
 )
 
 for addtl_path in addtl_paths:
-    sys.path.insert(0, os.path.abspath(os.path.join(DOCS_BASEPATH, addtl_path)))
-
-dist = distribution("pytest-system-statistics")
-
+    sys.path.insert(0, str(addtl_path))
 
 # -- Project information -----------------------------------------------------
 this_year = datetime.datetime.today().year
@@ -48,16 +46,15 @@ if this_year == 2021:
     copyright_year = 2021
 else:
     copyright_year = f"2021 - {this_year}"
-project = dist.metadata["Summary"]
-author = dist.metadata["Author"]
-copyright = f"{copyright_year}, {author}"  # pylint: disable=redefined-builtin
+project = "PyTest System Statistics"
+copyright = f"{copyright_year}, VMware, Inc."
+author = "VMware, Inc."
 
 # The full version, including alpha/beta/rc tags
-release = dist.version
-
+release = pkg_version("pytest-system-statistics")
 
 # Variables to pass into the docs from sitevars.rst for rst substitution
-with open("sitevars.rst", encoding="utf-8") as site_vars_file:
+with open("sitevars.rst") as site_vars_file:
     site_vars = site_vars_file.read().splitlines()
 
 rst_prolog = """
@@ -74,12 +71,12 @@ rst_prolog = """
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
-    "sphinx.ext.napoleon",
+    "sphinx_copybutton",
+    # "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
     "sphinx.ext.todo",
     "sphinx.ext.coverage",
-    "sphinx_copybutton",
     "sphinxcontrib.spelling",
     "sphinxcontrib.towncrier",
 ]
@@ -103,9 +100,8 @@ exclude_patterns = [
 ]
 
 autosummary_generate = True
-modindex_common_prefix = ["saf."]
+modindex_common_prefix = ["pytestsysstats."]
 master_doc = "contents"
-
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -113,21 +109,28 @@ master_doc = "contents"
 #
 html_theme = "furo"
 html_title = project
+html_theme_options = {
+    "light_logo": "img/SaltProject_altlogo_teal.png",
+    "dark_logo": "img/SaltProject_altlogo_teal.png",
+    "announcement": None,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
-# The name of an image file (relative to this directory) to place at the top
-# of the sidebar.
-html_logo = ""
+# These paths are either relative to html_static_path
+# or fully qualified paths (eg. https://...)
+html_css_files = [
+    "css/inline-include.css",
+]
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large. Favicons can be up to at least 228x228. PNG
 # format is supported as well, not just .ico'
-html_favicon = ""
+html_favicon = "_static/img/SaltProject_Logomark_teal.png"
 
 # Sphinx Napoleon Config
 napoleon_google_docstring = True
@@ -145,14 +148,19 @@ napoleon_use_rtype = True
 # ----- Intersphinx Config ---------------------------------------------------------------------------------------->
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
-    "pytest": ("https://docs.pytest.org/en/stable", None),
+    "pytest": ("https://docs.pytest.org/en/stable/", None),
+    "salt": ("https://docs.saltproject.io/en/latest", None),
+    "psutil": ("https://psutil.readthedocs.io/en/latest/", None),
+    "coverage": ("https://coverage.readthedocs.io/en/latest/", None),
 }
 # <---- Intersphinx Config -----------------------------------------------------------------------------------------
 
 # ----- Autodoc Config ---------------------------------------------------------------------------------------------->
 autodoc_default_options = {"member-order": "bysource"}
-autodoc_mock_imports = []
+autodoc_mock_imports = ["salt"]
+autodoc_typehints = "description"
 # <---- Autodoc Config -----------------------------------------------------------------------------------------------
+
 
 # ----- Towncrier Draft Release ------------------------------------------------------------------------------------->
 # Options: draft/sphinx-version/sphinx-release
@@ -164,7 +172,40 @@ towncrier_draft_working_directory = REPO_ROOT
 # <---- Towncrier Draft Release --------------------------------------------------------------------------------------
 
 
+# ----- Literal Include - Auto Caption ------------------------------------------------------------------------------>
+
+
+class IncludeExample(LiteralInclude):
+    """
+    The first argument to the directive is the file path relative to the repository root
+
+    .. code-block:: rst
+
+        .. include-example:: relative/path/to/example.py
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.example_file = self.arguments[0]
+        # Get the current doc path relative to the docs directory
+        rel_current_source = os.path.relpath(DOCS_BASEPATH, self.state.document.current_source)
+        # Now, the passed filename, relative to the current doc, so that including it actually works
+        self.arguments[0] = os.path.join(rel_current_source, self.example_file)
+
+    def run(self):
+        if "caption" not in self.options:
+            self.options["caption"] = self.example_file
+        if "name" not in self.options:
+            self.options["name"] = self.example_file
+        return super().run()
+
+
+# <---- Literal Include - Auto Caption -------------------------------------------------------------------------------
+
+
 def setup(app):
+    app.add_directive("include-example", IncludeExample)
     app.add_crossref_type(
         directivename="fixture",
         rolename="fixture",
