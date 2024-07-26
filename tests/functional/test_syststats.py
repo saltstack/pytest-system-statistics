@@ -96,6 +96,7 @@ def test_basic_sys_stats(pytester):
 
 
 @pytest.mark.skip_on_freebsd
+@pytest.mark.skip_on_sunos
 def test_basic_sys_stats_uss(pytester):
     pytester.makepyfile(
         """

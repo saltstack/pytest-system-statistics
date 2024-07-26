@@ -93,6 +93,9 @@ class SystemStatsReporter:
             if platform.is_freebsd():
                 # FreeBSD doesn't apparently support uss
                 self.sys_stats_mem_type = "rss"
+            if platform.is_sunos():
+                # Solaris and illumos doesn't apparently support uss
+                self.sys_stats_mem_type = "rss"
         else:
             self.sys_stats_mem_type = "rss"
 
